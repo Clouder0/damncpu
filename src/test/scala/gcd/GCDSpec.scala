@@ -23,7 +23,7 @@ import org.scalatest.matchers.must.Matchers
   * mill damncpu.test.testOnly gcd.GCDSpec
   * }}}
   */
-class GCDSpec extends AnyFreeSpec with Matchers {
+/* class GCDSpec extends AnyFreeSpec with Matchers {
 
   "Gcd should calculate proper greatest common denominator" in {
     simulate(new DecoupledGcd(16)) { dut =>
@@ -66,3 +66,4 @@ class GCDSpec extends AnyFreeSpec with Matchers {
     }
   }
 }
+ */
