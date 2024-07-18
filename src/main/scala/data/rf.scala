@@ -27,7 +27,7 @@ class RF extends Module {
     val from_imm = Input(UInt(32.W))
     val from_pc = Input(UInt(32.W))
   })
-  
+
   @public val out = IO(new Bundle {
     val rD1 = Output(UInt(32.W))
     val rD2 = Output(UInt(32.W))

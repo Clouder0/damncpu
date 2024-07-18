@@ -5,23 +5,30 @@ import chisel3.experimental.hierarchy.Instantiate
 import mock.DRAM
 
 class MockCPU extends Module {
-    val core = Instantiate(new CPU)
-    val dram = Instantiate(new DRAM)
-    val in = IO(new Bundle {
-        val inst = Input(UInt(32.W))
-    })
-    val out = IO(new Bundle {
-        val inst_addr = Output(UInt(16.W))
-        val alu_res = Output(UInt(32.W))
-    })
-    core.io_irom.inst := in.inst
-    out.inst_addr := core.io_irom.inst_addr
-    dram.in.addr := core.io_dram.alu_res
-    dram.in.din := core.io_dram.rD2
-    dram.in.we := core.io_dram.we
-    core.io_dram.dram_rdata := dram.out.dout
-    
-    out.alu_res := core.io_dram.alu_res
+  val core = Instantiate(new CPU)
+  val dram = Instantiate(new DRAM)
+  val bridge = Instantiate(new Bridge)
+  val in = IO(new Bundle {
+    val inst = Input(UInt(32.W))
+  })
+  val out = IO(new Bundle {
+    val inst_addr = Output(UInt(16.W))
+    val alu_res = Output(UInt(32.W))
+  })
+  core.io_irom.inst := in.inst
+  out.inst_addr := core.io_irom.inst_addr
+
+  bridge.cpu.addr := core.io_bus.addr
+  bridge.cpu.data_from_cpu := core.io_bus.bus_out
+  bridge.cpu.we := core.io_bus.we
+  core.io_bus.bus_in := bridge.cpu.data_to_cpu
+
+  dram.in.addr := bridge.dram.addr
+  dram.in.din := bridge.dram.data_to_dram
+  bridge.dram.data_from_dram := dram.out.dout
+  dram.in.we := bridge.dram.we
+
+  out.alu_res := core.io_bus.addr
 }
 
 object Main extends App {

@@ -21,7 +21,7 @@ class Control extends Module {
     val inst = Input(UInt(32.W))
     val br = Input(Bool())
   })
-  
+
   @public val out = IO(new Bundle {
     val npc_op = Output(UInt(2.W))
     val alu_op = Output(UInt(4.W))
@@ -31,7 +31,6 @@ class Control extends Module {
     val rf_wsel = Output(UInt(2.W))
     val ram_we = Output(Bool())
   })
-
 
   val opcode = in.inst(6, 0)
   val func3 = in.inst(14, 12)
@@ -65,7 +64,7 @@ class Control extends Module {
         out.alu_op := ALU.OP.ADD
       }
     }.elsewhen(func3 === "b111".U) {
-      out.alu_op := ALU.OP.AND      
+      out.alu_op := ALU.OP.AND
     }.elsewhen(func3 === "b110".U) {
       out.alu_op := ALU.OP.OR
     }.elsewhen(func3 === "b100".U) {

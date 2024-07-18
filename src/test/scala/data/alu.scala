@@ -104,7 +104,7 @@ class ALUSpec extends AnyFreeSpec with Matchers {
 
     }
   }
-  
+
   "ALU imm extension" in {
     simulate(new ALU) { dut =>
       dut.in.a.poke(0.U)
@@ -112,9 +112,9 @@ class ALUSpec extends AnyFreeSpec with Matchers {
       dut.in.b.poke(2.U)
       dut.in.sel.poke(true.B)
       dut.in.alu_op.poke(ALU.OP.ADD)
-      
+
       dut.clock.step()
-      
+
       dut.out.res.expect(1.U)
     }
   }

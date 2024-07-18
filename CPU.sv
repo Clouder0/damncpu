@@ -122,17 +122,13 @@ endmodule
 module NPC(
   input  [31:0] in_pc,
                 in_offset,
-  input         in_br,
   input  [1:0]  in_op,
   input  [31:0] in_alu_res,
   output [31:0] out_npc
 );
 
   wire [3:0][31:0] _GEN =
-    {{in_alu_res},
-     {in_pc + in_offset},
-     {in_br ? in_pc + in_offset : in_pc + 32'h4},
-     {in_pc + 32'h4}};
+    {{in_alu_res}, {in_pc + in_offset}, {in_pc + in_offset}, {in_pc + 32'h4}};
   assign out_npc = _GEN[in_op];
 endmodule
 
@@ -353,10 +349,10 @@ module CPU(
                 reset,
   output [15:0] io_irom_inst_addr,
   input  [31:0] io_irom_inst,
-  output [31:0] io_dram_alu_res,
-                io_dram_rD2,
-  input  [31:0] io_dram_dram_rdata,
-  output        io_dram_we
+  output [31:0] io_bus_addr,
+  output        io_bus_we,
+  input  [31:0] io_bus_bus_in,
+  output [31:0] io_bus_bus_out
 );
 
   wire [31:0] _i_sext_out_dout;
@@ -381,7 +377,7 @@ module CPU(
     .out_sext_op  (_i_ctrl_out_sext_op),
     .out_rf_we    (_i_ctrl_out_rf_we),
     .out_rf_wsel  (_i_ctrl_out_rf_wsel),
-    .out_ram_we   (io_dram_we)
+    .out_ram_we   (io_bus_we)
   );
   ALU i_alu (
     .in_a      (_i_rf_out_rD1),
@@ -401,7 +397,6 @@ module CPU(
   NPC i_npc (
     .in_pc      (_i_pc_out_pc),
     .in_offset  (_i_sext_out_dout),
-    .in_br      (_i_alu_out_br),
     .in_op      (_i_ctrl_out_npc_op),
     .in_alu_res (_i_alu_out_res),
     .out_npc    (_i_npc_out_npc)
@@ -415,7 +410,7 @@ module CPU(
     .in_we        (_i_ctrl_out_rf_we),
     .in_wsel      (_i_ctrl_out_rf_wsel),
     .in_from_alu  (_i_alu_out_res),
-    .in_from_dram (io_dram_dram_rdata),
+    .in_from_dram (io_bus_bus_in),
     .in_from_imm  (_i_sext_out_dout),
     .in_from_pc   (_i_pc_out_pc),
     .out_rD1      (_i_rf_out_rD1),
@@ -427,7 +422,7 @@ module CPU(
     .out_dout (_i_sext_out_dout)
   );
   assign io_irom_inst_addr = _i_pc_out_pc[15:0];
-  assign io_dram_alu_res = _i_alu_out_res;
-  assign io_dram_rD2 = _i_rf_out_rD2;
+  assign io_bus_addr = _i_alu_out_res;
+  assign io_bus_bus_out = _i_rf_out_rD2;
 endmodule
 

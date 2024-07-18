@@ -10,7 +10,7 @@ class PC extends Module {
   @public val in = IO(new Bundle {
     val din = Input(UInt(32.W))
   })
-  @public val out = IO(new Bundle{ val pc = Output(UInt(32.W))})
+  @public val out = IO(new Bundle { val pc = Output(UInt(32.W)) })
   val output = RegInit(0.U(32.W))
   output := in.din
   out.pc := output
@@ -33,7 +33,7 @@ class NPC extends Module {
     val op = Input(UInt(2.W))
     val alu_res = Input(UInt(32.W))
   })
-  
+
   @public val out = IO(new Bundle {
     val npc = Output(UInt(32.W))
   })
@@ -51,4 +51,3 @@ class NPC extends Module {
     out.npc := in.alu_res
   }
 }
-

@@ -17,23 +17,23 @@ class PCSpec extends AnyFreeSpec with Matchers {
       dut.out.pc.expect(43.U)
     }
   }
-  
+
   "NPC test" in {
-    simulate(new NPC) { dut => 
+    simulate(new NPC) { dut =>
       dut.in.pc.poke(4.U)
       dut.in.op.poke(NPC.OP.PC4)
       dut.clock.step()
       dut.out.npc.expect(8.U)
-      
+
       dut.in.op.poke(NPC.OP.BR)
       dut.in.offset.poke(2.U)
       dut.clock.step()
       dut.out.npc.expect(6.U)
-      
+
       dut.in.op.poke(NPC.OP.PC4)
       dut.clock.step()
       dut.out.npc.expect(8.U)
-      
+
       dut.in.op.poke(NPC.OP.J)
       dut.in.offset.poke(4.U)
       dut.clock.step()
