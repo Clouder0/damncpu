@@ -9,7 +9,7 @@ object RF {
     val ALU = 0.U
     val DRAM = 1.U
     val IMM = 2.U
-    val PC = 3.U
+    val PC4 = 3.U
 
   }
 }
@@ -31,6 +31,7 @@ class RF extends Module {
   @public val out = IO(new Bundle {
     val rD1 = Output(UInt(32.W))
     val rD2 = Output(UInt(32.W))
+    val wD = Output(UInt(32.W))
   })
 
   val regs = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
@@ -38,17 +39,19 @@ class RF extends Module {
   out.rD1 := regs(in.rR1)
   out.rD2 := regs(in.rR2)
 
+  when(in.wsel === RF.SEL.ALU) {
+    out.wD := in.from_alu
+  }.elsewhen(in.wsel === RF.SEL.DRAM) {
+    out.wD := in.from_dram
+  }.elsewhen(in.wsel === RF.SEL.IMM) {
+    out.wD := in.from_imm
+  }.elsewhen(in.wsel === RF.SEL.PC4) {
+    out.wD := in.from_pc + 4.U
+  }.otherwise {
+    out.wD := 0.U
+  }
+
   when(in.we && in.wR =/= 0.U) { // disallow write to x0
-    when(in.wsel === RF.SEL.ALU) {
-      regs(in.wR) := in.from_alu
-    }.elsewhen(in.wsel === RF.SEL.DRAM) {
-      regs(in.wR) := in.from_dram
-    }.elsewhen(in.wsel === RF.SEL.IMM) {
-      regs(in.wR) := in.from_imm
-    }.elsewhen(in.wsel === RF.SEL.PC) {
-      regs(in.wR) := in.from_pc
-    }.otherwise {
-      regs(in.wR) := 0.U
-    }
+    regs(in.wR) := out.wD
   }
 }

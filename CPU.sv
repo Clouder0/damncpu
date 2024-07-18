@@ -11,16 +11,18 @@ module Control(
   output        out_ram_we
 );
 
-  wire            _GEN = in_inst[6:0] == 7'h19;
+  wire            _GEN = in_inst[6:0] == 7'h33;
   wire            _GEN_0 = in_inst[6:0] == 7'h13;
   wire            _GEN_1 = in_inst[6:0] == 7'h3;
   wire            _GEN_2 = in_inst[6:0] == 7'h67;
   wire            _GEN_3 = in_inst[6:0] == 7'h23;
   wire            _GEN_4 = in_inst[6:0] == 7'h63;
-  wire            _GEN_5 = _GEN | _GEN_0;
-  wire            _GEN_6 = in_inst[14:12] == 3'h1;
-  wire            _GEN_7 = in_inst[14:12] == 3'h5;
-  wire [7:0][3:0] _GEN_8 =
+  wire            _GEN_5 = in_inst[6:0] == 7'h37;
+  wire            _GEN_6 = in_inst[6:0] == 7'h6F;
+  wire            _GEN_7 = _GEN | _GEN_0;
+  wire            _GEN_8 = in_inst[14:12] == 3'h1;
+  wire            _GEN_9 = in_inst[14:12] == 3'h5;
+  wire [7:0][3:0] _GEN_10 =
     {{4'h2},
      {4'h3},
      {{3'h3, |(in_inst[31:25])}},
@@ -29,28 +31,29 @@ module Control(
      {4'h0},
      {4'h5},
      {_GEN ? {3'h0, |(in_inst[31:25])} : 4'h0}};
-  wire            _GEN_9 = _GEN_1 | _GEN_2 | _GEN_3;
+  wire            _GEN_11 = _GEN_1 | _GEN_2;
   assign out_npc_op =
     _GEN | _GEN_0 | _GEN_1
       ? 2'h0
-      : _GEN_2 ? 2'h3 : _GEN_3 | ~_GEN_4 ? 2'h0 : {1'h0, in_br};
+      : _GEN_2
+          ? 2'h3
+          : _GEN_3 ? 2'h0 : _GEN_4 ? {1'h0, in_br} : _GEN_5 ? 2'h0 : {_GEN_6, 1'h0};
   assign out_alu_op =
-    _GEN_5
-      ? _GEN_8[in_inst[14:12]]
-      : _GEN_9 | ~_GEN_4
+    _GEN_7
+      ? _GEN_10[in_inst[14:12]]
+      : _GEN_1 | _GEN_2 | _GEN_3 | ~_GEN_4
           ? 4'h0
           : in_inst[14:12] == 3'h0
               ? 4'h8
-              : _GEN_6 ? 4'h9 : in_inst[14:12] == 3'h4 ? 4'hA : _GEN_7 ? 4'hB : 4'h8;
-  assign out_alu_bsel = ~_GEN & (_GEN_0 | _GEN_9 | _GEN_4);
+              : _GEN_8 ? 4'h9 : in_inst[14:12] == 3'h4 ? 4'hA : _GEN_9 ? 4'hB : 4'h8;
+  assign out_alu_bsel = ~_GEN & (_GEN_0 | _GEN_11 | _GEN_3);
   assign out_sext_op =
     _GEN_0
-      ? (_GEN_6 | _GEN_7 ? 3'h5 : 3'h0)
-      : _GEN_1 | _GEN_2
-          ? 3'h0
-          : _GEN_3 ? 3'h1 : _GEN_4 ? 3'h2 : in_inst[6:0] == 7'h37 ? 3'h3 : 3'h0;
+      ? (_GEN_8 | _GEN_9 ? 3'h5 : 3'h0)
+      : _GEN_11 ? 3'h0 : _GEN_3 ? 3'h1 : _GEN_4 ? 3'h2 : _GEN_5 ? 3'h3 : {_GEN_6, 2'h0};
   assign out_rf_we = ~(_GEN_3 | _GEN_4);
-  assign out_rf_wsel = _GEN_5 ? 2'h0 : {~_GEN_1, 1'h1};
+  assign out_rf_wsel =
+    _GEN_7 ? 2'h0 : _GEN_1 ? 2'h1 : _GEN_2 | _GEN_6 ? 2'h3 : {1'h1, ~_GEN_5};
   assign out_ram_we = _GEN_3;
 endmodule
 
@@ -110,11 +113,17 @@ module PC(
 );
 
   reg [31:0] output_0;
+  reg        flag;
   always @(posedge clock) begin
-    if (reset)
+    if (reset) begin
       output_0 <= 32'h0;
-    else
-      output_0 <= in_din;
+      flag <= 1'h0;
+    end
+    else begin
+      if (flag)
+        output_0 <= in_din;
+      flag <= 1'h1;
+    end
   end // always @(posedge)
   assign out_pc = output_0;
 endmodule
@@ -145,7 +154,8 @@ module RF(
                 in_from_imm,
                 in_from_pc,
   output [31:0] out_rD1,
-                out_rD2
+                out_rD2,
+                out_wD
 );
 
   reg  [31:0]       regs_0;
@@ -213,6 +223,8 @@ module RF(
      {regs_2},
      {regs_1},
      {regs_0}};
+  wire [3:0][31:0]  _GEN_0 =
+    {{in_from_pc + 32'h4}, {in_from_imm}, {in_from_dram}, {in_from_alu}};
   always @(posedge clock) begin
     if (reset) begin
       regs_0 <= 32'h0;
@@ -249,81 +261,76 @@ module RF(
       regs_31 <= 32'h0;
     end
     else begin
-      automatic logic             _GEN_0 = in_we & (|in_wR);
-      automatic logic [3:0][31:0] _GEN_1 =
-        {{in_from_pc}, {in_from_imm}, {in_from_dram}, {32'h0}};
-      automatic logic [31:0]      _GEN_2;
-      _GEN_2 = in_wsel == 2'h0 ? in_from_alu : _GEN_1[in_wsel];
-      if (~_GEN_0 | (|in_wR)) begin
-      end
-      else
-        regs_0 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h1)
-        regs_1 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h2)
-        regs_2 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h3)
-        regs_3 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h4)
-        regs_4 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h5)
-        regs_5 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h6)
-        regs_6 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h7)
-        regs_7 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h8)
-        regs_8 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h9)
-        regs_9 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'hA)
-        regs_10 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'hB)
-        regs_11 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'hC)
-        regs_12 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'hD)
-        regs_13 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'hE)
-        regs_14 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'hF)
-        regs_15 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h10)
-        regs_16 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h11)
-        regs_17 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h12)
-        regs_18 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h13)
-        regs_19 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h14)
-        regs_20 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h15)
-        regs_21 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h16)
-        regs_22 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h17)
-        regs_23 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h18)
-        regs_24 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h19)
-        regs_25 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h1A)
-        regs_26 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h1B)
-        regs_27 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h1C)
-        regs_28 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h1D)
-        regs_29 <= _GEN_2;
-      if (_GEN_0 & in_wR == 5'h1E)
-        regs_30 <= _GEN_2;
-      if (_GEN_0 & (&in_wR))
-        regs_31 <= _GEN_2;
+      automatic logic _GEN_1 = in_we & (|in_wR);
+      if (_GEN_1 & ~(|in_wR))
+        regs_0 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h1)
+        regs_1 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h2)
+        regs_2 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h3)
+        regs_3 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h4)
+        regs_4 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h5)
+        regs_5 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h6)
+        regs_6 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h7)
+        regs_7 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h8)
+        regs_8 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h9)
+        regs_9 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'hA)
+        regs_10 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'hB)
+        regs_11 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'hC)
+        regs_12 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'hD)
+        regs_13 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'hE)
+        regs_14 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'hF)
+        regs_15 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h10)
+        regs_16 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h11)
+        regs_17 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h12)
+        regs_18 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h13)
+        regs_19 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h14)
+        regs_20 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h15)
+        regs_21 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h16)
+        regs_22 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h17)
+        regs_23 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h18)
+        regs_24 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h19)
+        regs_25 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h1A)
+        regs_26 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h1B)
+        regs_27 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h1C)
+        regs_28 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h1D)
+        regs_29 <= _GEN_0[in_wsel];
+      if (_GEN_1 & in_wR == 5'h1E)
+        regs_30 <= _GEN_0[in_wsel];
+      if (_GEN_1 & (&in_wR))
+        regs_31 <= _GEN_0[in_wsel];
     end
   end // always @(posedge)
   assign out_rD1 = _GEN[in_rR1];
   assign out_rD2 = _GEN[in_rR2];
+  assign out_wD = _GEN_0[in_wsel];
 endmodule
 
 module SEXT(
@@ -335,10 +342,10 @@ module SEXT(
   wire [7:0][31:0] _GEN =
     {{32'h0},
      {32'h0},
-     {32'h0},
      {{27'h0, in_din[17:13]}},
+     {{{12{in_din[24]}}, in_din[12:5], in_din[13], in_din[23:14], 1'h0}},
      {{in_din[24:5], 12'h0}},
-     {{{20{in_din[24]}}, in_din[24:18], in_din[4:1], 1'h1}},
+     {{{20{in_din[24]}}, in_din[0], in_din[23:18], in_din[4:1], 1'h0}},
      {{{20{in_din[24]}}, in_din[24:18], in_din[4:0]}},
      {{{20{in_din[24]}}, in_din[24:13]}}};
   assign out_dout = _GEN[in_op];
@@ -352,7 +359,8 @@ module CPU(
   output [31:0] io_bus_addr,
   output        io_bus_we,
   input  [31:0] io_bus_bus_in,
-  output [31:0] io_bus_bus_out
+  output [31:0] io_bus_bus_out,
+                test_out_wD
 );
 
   wire [31:0] _i_sext_out_dout;
@@ -414,7 +422,8 @@ module CPU(
     .in_from_imm  (_i_sext_out_dout),
     .in_from_pc   (_i_pc_out_pc),
     .out_rD1      (_i_rf_out_rD1),
-    .out_rD2      (_i_rf_out_rD2)
+    .out_rD2      (_i_rf_out_rD2),
+    .out_wD       (test_out_wD)
   );
   SEXT i_sext (
     .in_din   (io_irom_inst[31:7]),

@@ -20,4 +20,14 @@ class CoreSpec extends AnyFreeSpec with Matchers {
       dut.out.alu_res.expect(4.U)
     }
   }
+  
+  "Jump" in {
+    simulate(new MockCPU) { dut => 
+      dut.in.inst.poke("h0040006f".U)
+      dut.clock.step()
+      dut.out.inst_addr.expect(0.U)
+      dut.clock.step()
+      dut.out.inst_addr.expect(4.U)
+    }
+  }
 }

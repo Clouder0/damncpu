@@ -9,6 +9,7 @@ import org.scalatest.matchers.must.Matchers
 class PCSpec extends AnyFreeSpec with Matchers {
   "PC should output the input value" in {
     simulate(new PC) { dut =>
+      dut.clock.step()
       dut.in.din.poke(42.U)
       dut.clock.step()
       dut.out.pc.expect(42.U)
@@ -20,6 +21,7 @@ class PCSpec extends AnyFreeSpec with Matchers {
 
   "NPC test" in {
     simulate(new NPC) { dut =>
+      dut.clock.step()
       dut.in.pc.poke(4.U)
       dut.in.op.poke(NPC.OP.PC4)
       dut.clock.step()

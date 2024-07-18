@@ -3,6 +3,7 @@ import data._
 import circt.stage.ChiselStage
 import chisel3.experimental.hierarchy.Instantiate
 import mock.DRAM
+import chisel3.stage.ChiselGeneratorAnnotation
 
 class MockCPU extends Module {
   val core = Instantiate(new CPU)
@@ -34,6 +35,11 @@ class MockCPU extends Module {
 object Main extends App {
   ChiselStage.emitSystemVerilogFile(
     new CPU,
-    firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info")
+    firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info", "--verilog")
   )
+  ChiselStage.emitSystemVerilogFile(
+    new Bridge,
+    firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info", "--verilog")
+  )
+
 }

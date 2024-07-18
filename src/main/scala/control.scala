@@ -7,14 +7,14 @@ import chisel3.experimental.hierarchy.public
 @instantiable
 class Control extends Module {
   object OP {
-    val R = "b011001".U
+    val R = "b0110011".U
     val I = "b0010011".U
     val LW = "b0000011".U
     val JALR = "b1100111".U
     val SW = "b0100011".U
     val B = "b1100011".U
     val U = "b0110111".U
-    val J = "b110111".U
+    val J = "b1101111".U
   }
 
   @public val in = IO(new Bundle {
@@ -109,7 +109,7 @@ class Control extends Module {
   }.elsewhen(opcode === OP.SW) {
     out.alu_bsel := true.B
   }.elsewhen(opcode === OP.B) {
-    out.alu_bsel := true.B
+    out.alu_bsel := false.B
   }.elsewhen(opcode === OP.U) {
     out.alu_bsel := false.B
   }.elsewhen(opcode === OP.J) {
@@ -151,13 +151,13 @@ class Control extends Module {
   }.elsewhen(opcode === OP.LW) {
     out.rf_wsel := RF.SEL.DRAM
   }.elsewhen(opcode === OP.JALR) {
-    out.rf_wsel := RF.SEL.PC
+    out.rf_wsel := RF.SEL.PC4
   }.elsewhen(opcode === OP.J) {
-    out.rf_wsel := RF.SEL.PC
+    out.rf_wsel := RF.SEL.PC4
   }.elsewhen(opcode === OP.U) {
     out.rf_wsel := RF.SEL.IMM
   }.otherwise {
-    out.rf_wsel := RF.SEL.PC
+    out.rf_wsel := RF.SEL.PC4
   }
 
   when(opcode === OP.SW) {

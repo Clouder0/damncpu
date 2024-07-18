@@ -19,6 +19,10 @@ class CPU extends Module {
     val bus_in = Input(UInt(32.W))
     val bus_out = Output(UInt(32.W))
   })
+  
+  @public val test_out = IO(new Bundle {
+    val wD = Output(UInt(32.W))
+  })
 
   @public val i_ctrl = Instantiate(new Control())
   @public val i_alu = Instantiate(new ALU())
@@ -47,6 +51,7 @@ class CPU extends Module {
   i_rf.in.rR1 := io_irom.inst(19, 15)
   i_rf.in.rR2 := io_irom.inst(24, 20)
   i_rf.in.wR := io_irom.inst(11, 7)
+  test_out.wD := i_rf.out.wD
 
   i_alu.in.alu_op := i_ctrl.out.alu_op
   i_alu.in.a := i_rf.out.rD1

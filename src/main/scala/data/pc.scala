@@ -12,7 +12,12 @@ class PC extends Module {
   })
   @public val out = IO(new Bundle { val pc = Output(UInt(32.W)) })
   val output = RegInit(0.U(32.W))
-  output := in.din
+  val flag =  RegInit(false.B)
+  when(flag) {
+    output := in.din
+  }.otherwise {
+    flag := true.B
+  }
   out.pc := output
 }
 object NPC {
