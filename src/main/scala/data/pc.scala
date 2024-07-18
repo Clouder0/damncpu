@@ -2,15 +2,18 @@ package data
 
 import chisel3._
 import circt.stage.ChiselStage
+import chisel3.experimental.hierarchy.instantiable
+import chisel3.experimental.hierarchy.public
 
+@instantiable
 class PC extends Module {
-  val io = IO(new Bundle {
+  @public val in = IO(new Bundle {
     val din = Input(UInt(32.W))
-    val pc = Output(UInt(32.W))
   })
+  @public val out = IO(new Bundle{ val pc = Output(UInt(32.W))})
   val output = RegInit(0.U(32.W))
-  output := io.din
-  io.pc := output
+  output := in.din
+  out.pc := output
 }
 object NPC {
   object OP {
@@ -20,37 +23,32 @@ object NPC {
     val JR = 3.U
   }
 }
+
+@instantiable
 class NPC extends Module {
 
-  val io = IO(new Bundle {
+  @public val in = IO(new Bundle {
     val pc = Input(UInt(32.W))
     val offset = Input(UInt(32.W))
-    val br = Input(Bool())
     val op = Input(UInt(2.W))
     val alu_res = Input(UInt(32.W))
+  })
+  
+  @public val out = IO(new Bundle {
     val npc = Output(UInt(32.W))
   })
-  when(io.op === NPC.OP.PC4) {
-    io.npc := io.pc + 4.U // PC := PC + 4
-  }.elsewhen(io.op === NPC.OP.BR) {
+
+  when(in.op === NPC.OP.PC4) {
+    out.npc := in.pc + 4.U // PC := PC + 4
+  }.elsewhen(in.op === NPC.OP.BR) {
     // branch
-    when(io.br) {
-      io.npc := io.pc + io.offset
-    }.otherwise {
-      io.npc := io.pc + 4.U
-    }
-  }.elsewhen(io.op === NPC.OP.J) {
+    out.npc := in.pc + in.offset
+  }.elsewhen(in.op === NPC.OP.J) {
     // jump
-    io.npc := io.pc + io.offset
+    out.npc := in.pc + in.offset
   }.otherwise {
     // alu result
-    io.npc := io.alu_res
+    out.npc := in.alu_res
   }
 }
 
-object PC extends App {
-  ChiselStage.emitSystemVerilogFile(
-    new PC,
-    firtoolOpts = Array("-disable-all-randomization", "-strip-debug-info")
-  )
-}

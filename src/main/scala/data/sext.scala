@@ -3,6 +3,8 @@ package data
 import chisel3._
 import chisel3.util.Cat
 import chisel3.util.Fill
+import chisel3.experimental.hierarchy.instantiable
+import chisel3.experimental.hierarchy.public
 
 object SEXT {
   object OP {
@@ -15,23 +17,28 @@ object SEXT {
     val SHIFT = 5.U
   }
 }
+
+@instantiable
 class SEXT extends Module {
-  val io = IO(new Bundle {
+  @public val in = IO(new Bundle {
     val din = Input(UInt(25.W))
     val op = Input(UInt(3.W))
+  })
+  @public val out = IO(new Bundle {
     val dout = Output(UInt(32.W))
   })
-  when(io.op === SEXT.OP.I) {
-    io.dout := Cat(Fill(20, io.din(24)), io.din(24, 13))
-  }.elsewhen(io.op === SEXT.OP.S) {
-    io.dout := Cat(Fill(20, io.din(24)), io.din(24, 18), io.din(4, 0))
-  }.elsewhen(io.op === SEXT.OP.B) {
-    io.dout := Cat(Fill(20, io.din(24)), io.din(24, 18), io.din(4, 1), 1.U)
-  }.elsewhen(io.op === SEXT.OP.U) {
-    io.dout := Cat(io.din(24, 5), Fill(12, 0.U))
-  }.elsewhen(io.op === SEXT.OP.J) {
-    io.dout := Cat(Fill(27, 0.U), io.din(17, 13))
+
+  when(in.op === SEXT.OP.I) {
+    out.dout := Cat(Fill(20, in.din(24)), in.din(24, 13))
+  }.elsewhen(in.op === SEXT.OP.S) {
+    out.dout := Cat(Fill(20, in.din(24)), in.din(24, 18), in.din(4, 0))
+  }.elsewhen(in.op === SEXT.OP.B) {
+    out.dout := Cat(Fill(20, in.din(24)), in.din(24, 18), in.din(4, 1), 1.U)
+  }.elsewhen(in.op === SEXT.OP.U) {
+    out.dout := Cat(in.din(24, 5), Fill(12, 0.U))
+  }.elsewhen(in.op === SEXT.OP.J) {
+    out.dout := Cat(Fill(27, 0.U), in.din(17, 13))
   }.otherwise {
-    io.dout := Fill(32, 0.U)
+    out.dout := Fill(32, 0.U)
   }
 }

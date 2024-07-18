@@ -15,6 +15,7 @@ object damncpu extends SbtModule { m =>
     "-deprecation",
     "-feature",
     "-Xcheckinit",
+    "-Ymacro-annotations",
   )
   override def ivyDeps = Agg(
     ivy"org.chipsalliance::chisel:6.2.0",

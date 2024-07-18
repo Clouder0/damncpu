@@ -1,6 +1,8 @@
 package data
 
 import chisel3._
+import chisel3.experimental.hierarchy.instantiable
+import chisel3.experimental.hierarchy.public
 
 object ALU {
   object OP {
@@ -20,58 +22,62 @@ object ALU {
   }
 }
 
+@instantiable
 class ALU extends Module {
-  val io = IO(new Bundle {
+  @public val in = IO(new Bundle {
     val a = Input(UInt(32.W))
     val b = Input(UInt(32.W))
     val imm = Input(UInt(32.W))
     val sel = Input(Bool()) // select b or imm
     val alu_op = Input(UInt(4.W))
-    val res = Output(UInt(32.W))
-    val bf = Output(Bool())
   })
 
-  val b_ = Mux(io.sel, io.imm, io.b)
+  @public val out = IO(new Bundle {
+    val res = Output(UInt(32.W))
+    val br = Output(Bool())
+  })
+
+  val b_ = Mux(in.sel, in.imm, in.b)
   val low_bits = b_(4, 0)
 
-  when(io.alu_op === ALU.OP.ADD) {
-    io.res := io.a + b_
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.SUB) {
-    io.res := io.a - b_
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.AND) {
-    io.res := io.a & b_
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.OR) {
-    io.res := io.a | b_
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.XOR) {
-    io.res := io.a ^ b_
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.SLL) {
-    io.res := io.a << low_bits
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.SRL) {
-    io.res := io.a >> low_bits
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.SRA) {
-    io.res := (io.a.asSInt >> low_bits).asUInt
-    io.bf := false.B
-  }.elsewhen(io.alu_op === ALU.OP.BEQ) {
-    io.res := 0.U
-    io.bf := io.a === b_
-  }.elsewhen(io.alu_op === ALU.OP.BNE) {
-    io.res := 0.U
-    io.bf := io.a =/= b_
-  }.elsewhen(io.alu_op === ALU.OP.BLT) {
-    io.res := 0.U
-    io.bf := io.a.asSInt < b_.asSInt
-  }.elsewhen(io.alu_op === ALU.OP.BGE) {
-    io.res := 0.U
-    io.bf := io.a.asSInt >= b_.asSInt
+  when(in.alu_op === ALU.OP.ADD) {
+    out.res := in.a + b_
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.SUB) {
+    out.res := in.a - b_
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.AND) {
+    out.res := in.a & b_
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.OR) {
+    out.res := in.a | b_
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.XOR) {
+    out.res := in.a ^ b_
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.SLL) {
+    out.res := in.a << low_bits
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.SRL) {
+    out.res := in.a >> low_bits
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.SRA) {
+    out.res := (in.a.asSInt >> low_bits).asUInt
+    out.br := false.B
+  }.elsewhen(in.alu_op === ALU.OP.BEQ) {
+    out.res := 0.U
+    out.br := in.a === b_
+  }.elsewhen(in.alu_op === ALU.OP.BNE) {
+    out.res := 0.U
+    out.br := in.a =/= b_
+  }.elsewhen(in.alu_op === ALU.OP.BLT) {
+    out.res := 0.U
+    out.br := in.a.asSInt < b_.asSInt
+  }.elsewhen(in.alu_op === ALU.OP.BGE) {
+    out.res := 0.U
+    out.br := in.a.asSInt >= b_.asSInt
   }.otherwise {
-    io.res := 0.U
-    io.bf := false.B
+    out.res := 0.U
+    out.br := false.B
   }
 }

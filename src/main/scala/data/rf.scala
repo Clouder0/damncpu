@@ -1,6 +1,8 @@
 package data
 
 import chisel3._
+import chisel3.experimental.hierarchy.instantiable
+import chisel3.experimental.hierarchy.public
 
 object RF {
   object SEL {
@@ -11,8 +13,10 @@ object RF {
 
   }
 }
+
+@instantiable
 class RF extends Module {
-  val io = IO(new Bundle {
+  @public val in = IO(new Bundle {
     val rR1 = Input(UInt(5.W))
     val rR2 = Input(UInt(5.W))
     val wR = Input(UInt(5.W))
@@ -22,26 +26,29 @@ class RF extends Module {
     val from_dram = Input(UInt(32.W))
     val from_imm = Input(UInt(32.W))
     val from_pc = Input(UInt(32.W))
+  })
+  
+  @public val out = IO(new Bundle {
     val rD1 = Output(UInt(32.W))
     val rD2 = Output(UInt(32.W))
   })
 
   val regs = RegInit(VecInit(Seq.fill(32)(0.U(32.W))))
 
-  io.rD1 := regs(io.rR1)
-  io.rD2 := regs(io.rR2)
+  out.rD1 := regs(in.rR1)
+  out.rD2 := regs(in.rR2)
 
-  when(io.we && io.wR =/= 0.U) { // disallow write to x0
-    when(io.wsel === RF.SEL.ALU) {
-      regs(io.wR) := io.from_alu
-    }.elsewhen(io.wsel === RF.SEL.DRAM) {
-      regs(io.wR) := io.from_dram
-    }.elsewhen(io.wsel === RF.SEL.IMM) {
-      regs(io.wR) := io.from_imm
-    }.elsewhen(io.wsel === RF.SEL.PC) {
-      regs(io.wR) := io.from_pc
+  when(in.we && in.wR =/= 0.U) { // disallow write to x0
+    when(in.wsel === RF.SEL.ALU) {
+      regs(in.wR) := in.from_alu
+    }.elsewhen(in.wsel === RF.SEL.DRAM) {
+      regs(in.wR) := in.from_dram
+    }.elsewhen(in.wsel === RF.SEL.IMM) {
+      regs(in.wR) := in.from_imm
+    }.elsewhen(in.wsel === RF.SEL.PC) {
+      regs(in.wR) := in.from_pc
     }.otherwise {
-      regs(io.wR) := 0.U
+      regs(in.wR) := 0.U
     }
   }
 }
