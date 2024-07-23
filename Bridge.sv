@@ -9,7 +9,17 @@ module Bridge(
   output        dram_we,
   output [31:0] dram_addr,
   input  [31:0] dram_data_from_dram,
-  output [31:0] dram_data_to_dram
+  output [31:0] dram_data_to_dram,
+  output [11:0] digit_addr_to_digit,
+  output        digit_we_to_digit,
+  output [31:0] digit_wdata_to_digit,
+  output [11:0] led_addr_to_led,
+  output        led_we_to_led,
+  output [31:0] led_wdata_to_led,
+  output [11:0] switches_addr_to_switches,
+  input  [31:0] switches_rdata_from_switches,
+  output [11:0] button_addr_to_button,
+  input  [31:0] button_rdata_from_button
 );
 
   wire access_mem = cpu_addr[31:12] != 20'hFFFFF;
@@ -17,5 +27,13 @@ module Bridge(
   assign dram_we = cpu_we & access_mem;
   assign dram_addr = cpu_addr;
   assign dram_data_to_dram = cpu_data_from_cpu;
+  assign digit_addr_to_digit = cpu_addr[11:0];
+  assign digit_we_to_digit = 1'h0;
+  assign digit_wdata_to_digit = cpu_data_from_cpu;
+  assign led_addr_to_led = cpu_addr[11:0];
+  assign led_we_to_led = 1'h0;
+  assign led_wdata_to_led = cpu_data_from_cpu;
+  assign switches_addr_to_switches = cpu_addr[11:0];
+  assign button_addr_to_button = cpu_addr[11:0];
 endmodule
 
