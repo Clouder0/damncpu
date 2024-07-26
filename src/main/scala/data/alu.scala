@@ -22,9 +22,8 @@ object ALU {
   }
 }
 
-@instantiable
 class ALU extends Module {
-  @public val in = IO(new Bundle {
+  val in = IO(new Bundle {
     val a = Input(UInt(32.W))
     val b = Input(UInt(32.W))
     val imm = Input(UInt(32.W))
@@ -32,7 +31,7 @@ class ALU extends Module {
     val alu_op = Input(UInt(4.W))
   })
 
-  @public val out = IO(new Bundle {
+  val out = IO(new Bundle {
     val res = Output(UInt(32.W))
     val br = Output(Bool())
   })

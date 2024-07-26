@@ -4,7 +4,6 @@ import data._
 import chisel3.experimental.hierarchy.instantiable
 import chisel3.experimental.hierarchy.public
 
-@instantiable
 class Control extends Module {
   object OP {
     val R = "b0110011".U
@@ -17,43 +16,39 @@ class Control extends Module {
     val J = "b1101111".U
   }
 
-  @public val in = IO(new Bundle {
+  val in = IO(new Bundle {
     val inst = Input(UInt(32.W))
-    val br = Input(Bool())
   })
 
-  @public val out = IO(new Bundle {
-    val npc_op = Output(UInt(2.W))
+  val out = IO(Output(new Bundle {
+    val has_inst = Bool()
+    val ID_read1 = Bool()
+    val ID_read2 = Bool()
+    val branch = UInt(2.W)
     val alu_op = Output(UInt(4.W))
     val alu_bsel = Output(Bool())
     val sext_op = Output(UInt(3.W))
-    val rf_we = Output(Bool())
+    val rf_we = Bool()
     val rf_wsel = Output(UInt(2.W))
     val ram_we = Output(Bool())
-  })
+  }))
 
   val opcode = in.inst(6, 0)
   val func3 = in.inst(14, 12)
   val func7 = in.inst(31, 25)
 
-  when(opcode === OP.R) {
-    out.npc_op := data.NPC.OP.PC4
-  }.elsewhen(opcode === OP.I) {
-    out.npc_op := data.NPC.OP.PC4
-  }.elsewhen(opcode === OP.LW) {
-    out.npc_op := data.NPC.OP.PC4
-  }.elsewhen(opcode === OP.JALR) {
-    out.npc_op := data.NPC.OP.JR
-  }.elsewhen(opcode === OP.SW) {
-    out.npc_op := data.NPC.OP.PC4
-  }.elsewhen(opcode === OP.B) {
-    out.npc_op := Mux(in.br, data.NPC.OP.BR, data.NPC.OP.PC4)
-  }.elsewhen(opcode === OP.U) {
-    out.npc_op := data.NPC.OP.PC4
+  out.has_inst := (opcode === OP.R || opcode === OP.I || opcode === OP.LW || opcode === OP.JALR || opcode === OP.SW || opcode === OP.B || opcode === OP.U || opcode === OP.J)
+  out.ID_read1 := opcode === OP.R || opcode === OP.I || opcode === OP.LW || opcode === OP.SW || opcode === OP.JALR || opcode === OP.B
+  out.ID_read2 := opcode === OP.R || opcode === OP.LW || opcode === OP.SW || opcode === OP.JALR || opcode === OP.B
+
+  when(opcode === OP.B) {
+    out.branch := JUMPSEL.B
   }.elsewhen(opcode === OP.J) {
-    out.npc_op := data.NPC.OP.J
+    out.branch := JUMPSEL.JAL
+  }.elsewhen(opcode === OP.JALR) {
+    out.branch := JUMPSEL.JALR
   }.otherwise {
-    out.npc_op := data.NPC.OP.PC4
+    out.branch := JUMPSEL.PC4
   }
 
   when(opcode === OP.R || opcode === OP.I) {
@@ -150,10 +145,6 @@ class Control extends Module {
     out.rf_wsel := RF.SEL.ALU
   }.elsewhen(opcode === OP.LW) {
     out.rf_wsel := RF.SEL.DRAM
-  }.elsewhen(opcode === OP.JALR) {
-    out.rf_wsel := RF.SEL.PC4
-  }.elsewhen(opcode === OP.J) {
-    out.rf_wsel := RF.SEL.PC4
   }.elsewhen(opcode === OP.U) {
     out.rf_wsel := RF.SEL.IMM
   }.otherwise {
